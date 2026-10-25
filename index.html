@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F5F5F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1012" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Tu app de tareas, racha, niveles y retos diarios.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script>window.PULSO_PWA=true</script>
+<title>Pulso</title>
+</head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,400&display=swap">
+<style>
+/* Layout: columna única tipo app, mucho aire, superficies sin bordes, una sola tinta de acento */
+:root{
+  --bg:#F5F5F2; --surface:#FFFFFF; --sunk:#ECECE7; --ink:#16171A; --muted:#75767C; --faint:#B9BAB6;
+  --accent:#3B4FE4; --accent-soft:#E9EBFC; --good:#1E9E68; --good-soft:#E4F4EC; --bad:#D4485D; --bad-soft:#FBEAED; --warm:#E07A35;
+  --ui:"Figtree",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --display:"Fraunces",Georgia,"Times New Roman",serif;
+  --ease:cubic-bezier(.22,1,.36,1); --spring:cubic-bezier(.34,1.45,.64,1);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1012; --surface:#18191C; --sunk:#222327; --ink:#EDEDEA; --muted:#8E8F95; --faint:#4A4B50;
+  --accent:#8794FF; --accent-soft:#1F2340; --good:#4CCB92; --good-soft:#132A20; --bad:#F27A8C; --bad-soft:#2E1619; --warm:#F29A5E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1012; --surface:#18191C; --sunk:#222327; --ink:#EDEDEA; --muted:#8E8F95; --faint:#4A4B50;
+  --accent:#8794FF; --accent-soft:#1F2340; --good:#4CCB92; --good-soft:#132A20; --bad:#F27A8C; --bad-soft:#2E1619; --warm:#F29A5E; color-scheme:dark}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--ui);font-size:15.5px;line-height:1.55;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button{font:inherit;color:inherit}
+.wrap{max-width:500px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));padding-block:0 120px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding-block:18px 12px}
+.brand{font-family:var(--display);font-weight:600;font-size:24px;letter-spacing:-.02em}
+.brand span{color:var(--accent)}
+.hdr-r{display:flex;gap:10px;align-items:center}
+.streak{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:14px;color:var(--warm);font-variant-numeric:tabular-nums}
+.icon-btn{width:38px;height:38px;border-radius:50%;border:0;background:var(--surface);color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:transform .3s var(--spring)}
+.icon-btn:active{transform:scale(.9) rotate(30deg)}
+h1{font-family:var(--display);font-weight:500;font-size:32px;letter-spacing:-.025em;line-height:1.1;margin:10px 0 22px;text-wrap:balance}
+h1 em{font-style:italic;font-weight:400;color:var(--muted)}
+.label{font-size:11.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.sec{margin:30px 0 12px;display:flex;justify-content:space-between;align-items:baseline}
+.stack{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border-radius:22px;padding:20px;min-width:0}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+/* entrada escalonada */
+.anim>*{animation:rise .6s var(--ease) both}
+.anim>*:nth-child(2){animation-delay:.04s}.anim>*:nth-child(3){animation-delay:.08s}.anim>*:nth-child(4){animation-delay:.12s}.anim>*:nth-child(5){animation-delay:.16s}.anim>*:nth-child(6){animation-delay:.2s}.anim>*:nth-child(n+7){animation-delay:.24s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.reveal{animation:rise .5s var(--ease) both}
+/* nivel */
+.level-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
+.level-n{font-family:var(--display);font-size:52px;font-weight:500;letter-spacing:-.04em;line-height:.9;font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width 1.1s var(--ease)}
+.meta-row{display:flex;justify-content:space-between;margin-top:12px;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.meta-row b{color:var(--ink);font-weight:700}
+/* frase */
+.quote{font-family:var(--display);font-size:22px;line-height:1.3;letter-spacing:-.01em;margin:10px 0 0;font-weight:500}
+.quote-es{margin:10px 0 0;color:var(--muted);font-size:14.5px;font-style:italic;font-family:var(--display);font-weight:400}
+.quote-a{margin-top:14px;font-size:13px;color:var(--muted)}
+.quote-a::before{content:"— "}
+/* filas */
+.row{display:flex;align-items:center;gap:14px;padding:14px 0;cursor:pointer;background:none;border:0;width:100%;text-align:left}
+.row+.row{border-top:1px solid var(--sunk)}
+.row:first-child{padding-top:0}.row:last-child{padding-bottom:0}
+.dot{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;flex:none;background:var(--accent-soft);color:var(--accent)}
+.grow{flex:1;min-width:0}
+.row b{font-weight:700}
+.st{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;border:1.5px solid var(--faint);color:transparent}
+.st.ok{background:var(--good);border-color:var(--good);color:#fff}
+.st.no{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+/* tareas */
+.task{display:flex;align-items:center;gap:14px;padding:13px 0}
+.task+.task{border-top:1px solid var(--sunk)}
+.task:first-child{padding-top:0}.task:last-child{padding-bottom:0}
+.check{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--faint);background:none;flex:none;cursor:pointer;display:grid;place-items:center;color:#fff;transition:background .35s var(--ease),border-color .35s var(--ease),transform .45s var(--spring)}
+.check svg path{stroke-dasharray:24;stroke-dashoffset:24;transition:stroke-dashoffset .45s var(--ease) .08s}
+.task.done .check{background:var(--good);border-color:var(--good);transform:scale(1.08)}
+.task.done .check svg path{stroke-dashoffset:0}
+.task .txt{flex:1;min-width:0;overflow-wrap:anywhere;transition:color .4s var(--ease),opacity .4s}
+.task.done .txt{color:var(--muted)}
+.task.done .txt span{text-decoration:line-through;text-decoration-color:var(--faint)}
+.tag{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:2px}
+.x{background:none;border:0;color:var(--faint);cursor:pointer;padding:6px;font-size:20px;line-height:1;transition:color .2s}
+.x:hover{color:var(--bad)}
+.leaving{animation:leave .4s var(--ease) both}
+@keyframes leave{to{opacity:0;transform:translateX(24px)}}
+/* formularios */
+.add{display:flex;gap:8px;flex-wrap:wrap}
+input[type=text],textarea,select{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid transparent;border-radius:16px;padding:13px 15px;min-width:0;transition:border-color .25s}
+input[type=text]{flex:1 1 180px}
+textarea{width:100%;resize:vertical;min-height:96px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.btn{font-weight:700;border:0;border-radius:16px;padding:13px 18px;cursor:pointer;background:var(--ink);color:var(--bg);transition:transform .35s var(--spring),opacity .2s}
+.btn:active{transform:scale(.96)}
+.btn.accent{background:var(--accent);color:#fff}
+.btn.ghost{background:var(--sunk);color:var(--ink)}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.wide{width:100%}
+.seg{position:relative;display:grid;grid-template-columns:repeat(3,1fr);background:var(--sunk);border-radius:16px;padding:4px}
+.seg i{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/3);background:var(--surface);border-radius:12px;transition:transform .5s var(--ease)}
+.seg button{position:relative;z-index:1;font-weight:700;font-size:14px;border:0;padding:9px;background:none;color:var(--muted);cursor:pointer;transition:color .3s}
+.seg button.on{color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 14px}
+.chips button{font-size:13.5px;font-weight:700;border:0;background:var(--sunk);color:var(--muted);border-radius:99px;padding:7px 14px;cursor:pointer;transition:background .3s,color .3s}
+.chips button.on{background:var(--ink);color:var(--bg)}
+/* retos */
+.q{font-size:18px;font-weight:600;line-height:1.45;margin:8px 0 18px;text-wrap:pretty}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;padding:14px 16px;border-radius:16px;border:1.5px solid var(--sunk);background:var(--surface);cursor:pointer;transition:transform .35s var(--spring),background .35s var(--ease),border-color .35s var(--ease),color .35s,opacity .35s}
+.opt:active{transform:scale(.98)}
+.opt.right{border-color:var(--good);background:var(--good-soft);color:var(--good);font-weight:700}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.opt.dim{opacity:.45}
+.opt[disabled]{cursor:default}
+.explain{margin-top:16px;padding:16px;border-radius:16px;background:var(--sunk);font-size:14.5px}
+.explain b{display:block;margin-bottom:4px}
+.poem{font-family:var(--display);font-size:20px;line-height:1.55;white-space:pre-line;margin:6px 0 0;font-weight:400}
+.poem-meta{margin-top:16px;font-size:13.5px;color:var(--muted)}
+.poem-meta b{color:var(--ink)}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.done-pill{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;color:var(--good)}
+/* progreso */
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat{background:var(--surface);border-radius:20px;padding:16px 18px}
+.stat b{display:block;font-family:var(--display);font-weight:500;font-size:34px;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:var(--muted);font-weight:600}
+svg text{fill:var(--muted);font-family:var(--ui);font-size:11px}
+.barg rect{transform-origin:bottom;transform-box:fill-box;animation:grow .9s var(--ease) both}
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+nav .in{position:relative;max-width:500px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);padding:8px 0}
+nav .ind{position:absolute;top:8px;left:0;width:20%;height:46px;display:flex;justify-content:center;transition:transform .55s var(--ease);pointer-events:none}
+nav .ind::before{content:"";width:56px;height:100%;border-radius:16px;background:var(--surface)}
+nav button{position:relative;z-index:1;font-size:10.5px;font-weight:700;background:none;border:0;color:var(--muted);height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:color .35s}
+nav button.on{color:var(--ink)}
+nav button svg{transition:transform .45s var(--spring)}
+nav button.on svg{transform:translateY(-1px) scale(1.06)}
+/* toast, panel, nivel */
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px) scale(.9);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-weight:800;font-size:14px;opacity:0;pointer-events:none;transition:opacity .3s var(--ease),transform .5s var(--spring);z-index:20;white-space:nowrap;font-variant-numeric:tabular-nums}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:30;display:flex;align-items:flex-end;justify-content:center;animation:fadein .3s var(--ease) both}
+.sheet{background:var(--bg);width:100%;max-width:500px;border-radius:28px 28px 0 0;padding:24px max(20px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px;max-height:88vh;overflow:auto;animation:up .5s var(--ease) both}
+@keyframes fadein{from{opacity:0}}
+@keyframes up{from{transform:translateY(100%)}}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:700;color:var(--muted)}
+.switch{display:flex;justify-content:space-between;align-items:center}
+.lvlup{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(0,0,0,.4);animation:fadein .35s var(--ease) both}
+.lvlup .box{position:relative;background:var(--bg);border-radius:32px;padding:36px 44px;text-align:center;animation:pop .7s var(--spring) both}
+.lvlup .ring{position:absolute;inset:-2px;border-radius:32px;border:2px solid var(--accent);animation:ring 1.4s var(--ease) .2s both;pointer-events:none}
+.lvlup b{display:block;font-family:var(--display);font-weight:500;font-size:84px;letter-spacing:-.05em;color:var(--accent);line-height:1}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+@keyframes ring{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(1.35)}}
+.note h3{margin:0 0 6px;font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:-.01em}
+.note p{margin:0;white-space:pre-line;overflow-wrap:anywhere;color:var(--muted)}
+.note .meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.empty{text-align:center;padding:30px 20px;color:var(--muted)}
+.fact{font-size:16px;line-height:1.5;margin:8px 0 0}
+@media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand" id="brand">Pulso<span>.</span></div>
+    <div class="hdr-r">
+      <span class="streak" id="streakChip"></span>
+      <button class="icon-btn" data-act="settings" aria-label="Ajustes">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
+    </div>
+  </header>
+  <main id="view"></main>
+</div>
+<nav><div class="in" id="nav"></div></nav>
+<div class="toast" id="toast"></div>
+<div id="overlay"></div>
+
+<script>
+/* =================== CONTENIDO =================== */
+const QUOTES=[
+["A journey of a thousand miles begins with a single step.","Un viaje de mil millas comienza con un solo paso.","Lao Tse"],
+["While we are postponing, life speeds by.","Mientras lo dejamos para después, la vida pasa corriendo.","Séneca"],
+["It is not that we have a short time to live, but that we waste a lot of it.","No es que tengamos poco tiempo, sino que perdemos mucho.","Séneca"],
+["As long as you live, keep learning how to live.","Mientras vivas, sigue aprendiendo a vivir.","Séneca"],
+["Difficulties strengthen the mind, as labor does the body.","Las dificultades fortalecen la mente, como el trabajo al cuerpo.","Séneca"],
+["No man is free who is not master of himself.","Nadie es libre si no es dueño de sí mismo.","Epicteto"],
+["First say to yourself what you would be; and then do what you have to do.","Primero di qué quieres ser; luego haz lo que tengas que hacer.","Epicteto"],
+["Waste no more time arguing about what a good man should be. Be one.","No pierdas más tiempo discutiendo cómo debe ser una buena persona. Sé una.","Marco Aurelio"],
+["The happiness of your life depends upon the quality of your thoughts.","La felicidad de tu vida depende de la calidad de tus pensamientos.","Marco Aurelio"],
+["The unexamined life is not worth living.","Una vida sin examinar no vale la pena vivirse.","Sócrates"],
+["The beginning is the most important part of the work.","El comienzo es la parte más importante del trabajo.","Platón"],
+["Well begun is half done.","Lo bien empezado ya está a medio hacer.","Aristóteles"],
+["No man ever steps in the same river twice.","Nadie se baña dos veces en el mismo río.","Heráclito"],
+["Real knowledge is to know the extent of one’s ignorance.","El verdadero conocimiento es saber cuánto ignoras.","Confucio"],
+["Know thyself.","Conócete a ti mismo.","Templo de Delfos"],
+["Go confidently in the direction of your dreams.","Avanza con confianza en la dirección de tus sueños.","Henry David Thoreau"],
+["Our life is frittered away by detail. Simplify, simplify.","Nuestra vida se desperdicia en detalles. Simplifica, simplifica.","Henry David Thoreau"],
+["Nothing great was ever achieved without enthusiasm.","Nada grande se ha logrado sin entusiasmo.","Ralph Waldo Emerson"],
+["Nothing in life is to be feared, it is only to be understood.","Nada en la vida debe temerse; solo debe comprenderse.","Marie Curie"],
+["Life is like riding a bicycle. To keep your balance, you must keep moving.","La vida es como andar en bici: para no caerte, hay que seguir avanzando.","Albert Einstein"],
+["The important thing is not to stop questioning.","Lo importante es no dejar de hacerse preguntas.","Albert Einstein"],
+["If I have seen further, it is by standing on the shoulders of giants.","Si he visto más lejos, es porque me subí a hombros de gigantes.","Isaac Newton"],
+["Well done is better than well said.","Bien hecho es mejor que bien dicho.","Benjamin Franklin"],
+["Lost time is never found again.","El tiempo perdido nunca se recupera.","Benjamin Franklin"],
+["An investment in knowledge pays the best interest.","Invertir en conocimiento paga el mejor interés.","Benjamin Franklin (atribuida)"],
+["Knowledge is power.","El conocimiento es poder.","Francis Bacon"],
+["We know what we are, but know not what we may be.","Sabemos lo que somos, pero no lo que podemos llegar a ser.","William Shakespeare"],
+["Diligence is the mother of good fortune.","La diligencia es madre de la buena ventura.","Miguel de Cervantes"],
+["He who reads much and walks much, sees much and knows much.","El que lee mucho y anda mucho, ve mucho y sabe mucho.","Miguel de Cervantes"],
+["Today is always still.","Hoy es siempre todavía.","Antonio Machado"],
+["To be cultured is the only way to be free.","Ser culto es el único modo de ser libre.","José Martí"],
+["Among individuals, as among nations, respect for the rights of others is peace.","Entre los individuos, como entre las naciones, el respeto al derecho ajeno es la paz.","Benito Juárez"],
+["I would rather put riches in my mind than my mind in riches.","Prefiero poner riquezas en mi entendimiento que mi entendimiento en las riquezas.","Sor Juana Inés de la Cruz"],
+["I am the master of my fate, I am the captain of my soul.","Soy el amo de mi destino, soy el capitán de mi alma.","William Ernest Henley"],
+["To strive, to seek, to find, and not to yield.","Luchar, buscar, encontrar y no rendirse.","Alfred Tennyson"],
+["We are all in the gutter, but some of us are looking at the stars.","Todos estamos en la cuneta, pero algunos miramos las estrellas.","Oscar Wilde"],
+["Trust thyself: every heart vibrates to that iron string.","Confía en ti: todo corazón vibra con esa cuerda de hierro.","Ralph Waldo Emerson"]
+];
+const FACTS=[
+"Los pulpos tienen tres corazones y sangre azul.",
+"La luz del Sol tarda unos 8 minutos y 20 segundos en llegar a la Tierra. Cuando lo ves, lo ves como era hace 8 minutos.",
+"Botánicamente, el plátano es una baya y la fresa no.",
+"En Venus, un día dura más que un año: tarda 243 días terrestres en girar sobre sí mismo y unos 225 en rodear al Sol.",
+"Los tiburones existen desde antes que los árboles: unos 450 millones de años contra unos 385.",
+"El agua aumenta su volumen cerca de 9% al congelarse. Por eso el hielo flota.",
+"El ajolote puede regenerar patas, cola y hasta partes de su corazón. Es endémico de Xochimilco.",
+"La Torre Eiffel puede crecer unos 15 cm en verano por la dilatación del metal con el calor.",
+"Popocatépetl significa “cerro que humea” en náhuatl.",
+"Un rayo puede alcanzar unos 30,000 °C, unas cinco veces la temperatura de la superficie del Sol.",
+"En algo más de una hora, la Tierra recibe del Sol tanta energía como la que toda la humanidad usa en un año.",
+"Hay más partidas posibles de ajedrez (unas 10^120) que átomos en el universo observable (unos 10^80).",
+"En 1947, unos técnicos encontraron una polilla real atorada en la computadora Harvard Mark II y la pegaron en su bitácora como el primer “bug” encontrado.",
+"Tu cerebro pesa alrededor del 2% de tu cuerpo, pero usa cerca del 20% de tu energía.",
+"El sonido viaja unos 343 m/s en el aire y más de 4 veces más rápido en el agua.",
+"La Luna se aleja de la Tierra unos 3.8 cm cada año.",
+"Hacia el año 500, Teotihuacan era una de las ciudades más grandes del mundo.",
+"Los mexicas usaban granos de cacao como moneda.",
+"Una nube cúmulo mediana puede pesar alrededor de 500 toneladas de agua.",
+"Los mayas usaron el concepto de cero de forma independiente, siglos antes de que llegara a Europa.",
+"Las aspas de las turbinas eólicas modernas pueden medir más de 100 metros.",
+"Un panel solar común convierte en electricidad alrededor del 20% de la luz que recibe.",
+"Las mariposas detectan el sabor con sensores en sus patas.",
+"La mariposa monarca migra hasta unos 4,000 km para pasar el invierno en los bosques de Michoacán y el Estado de México.",
+"La Gran Muralla China no se ve a simple vista desde el espacio. Es un mito.",
+"Algunas neuronas transmiten señales a más de 100 m/s.",
+"Venus es el planeta más caliente del sistema solar, aunque Mercurio está más cerca del Sol, por su atmósfera tan densa.",
+"El diamante y el grafito de tu lápiz están hechos del mismo elemento: carbono.",
+"Una cucharadita de material de una estrella de neutrones pesaría miles de millones de toneladas.",
+"Chocolate, tomate, aguacate y chicle son palabras que vienen del náhuatl.",
+"México está sobre cinco placas tectónicas, por eso tiene tantos sismos y volcanes.",
+"El efecto de repaso espaciado: repasar algo varias veces separadas en el tiempo se recuerda mucho mejor que estudiarlo todo de golpe.",
+"El cerebro sigue cambiando toda la vida. A eso se le llama neuroplasticidad.",
+"Dormir ayuda a fijar en la memoria lo que aprendiste durante el día.",
+"El corazón humano late unas 100,000 veces al día.",
+"El ser humano tiene unos 37 billones de células (37 millones de millones).",
+"La Ciudad de México se hunde en algunas zonas varias decenas de centímetros al año por la extracción de agua del subsuelo.",
+"El primer mensaje de internet (1969) iba a ser “LOGIN”, pero el sistema se cayó y solo llegó “LO”."
+];
+const LOGIC=[
+["Si 5 máquinas hacen 5 piezas en 5 minutos, ¿cuánto tardan 100 máquinas en hacer 100 piezas?",["100 minutos","5 minutos","20 minutos","1 minuto"],1,"Cada máquina hace 1 pieza en 5 minutos. 100 máquinas al mismo tiempo hacen 100 piezas en esos mismos 5 minutos."],
+["Un bat y una pelota cuestan $110. El bat cuesta $100 más que la pelota. ¿Cuánto cuesta la pelota?",["$10","$5","$15","$1"],1,"Si la pelota cuesta x, el bat cuesta x + 100: 2x + 100 = 110, así que x = 5. Con $10, el bat costaría solo $90 más."],
+["Unos nenúfares se duplican cada día y cubren el lago en 48 días. ¿En qué día cubrían la mitad?",["Día 24","Día 47","Día 46","Día 12"],1,"Si se duplican cada día, un día antes de cubrirlo todo cubrían la mitad."],
+["Todos los blips son blops, y algunos blops son blups. ¿Seguro que algunos blips son blups?",["Sí","No","Solo si hay muchos blips"],1,"Los blops que son blups podrían ser justo los que no son blips."],
+["El papá de María tiene cinco hijas: Lala, Lele, Lili, Lolo y…",["Lulu","María","Lola","No se sabe"],1,"La pregunta empieza diciendo que es el papá de María."],
+["¿Cuántos meses del año tienen 28 días?",["1","12","2","6"],1,"Todos los meses tienen al menos 28 días."],
+["En una carrera rebasas a quien va en segundo lugar. ¿En qué lugar vas?",["Primero","Segundo","Tercero"],1,"Tomaste su lugar: segundo."],
+["Tres cajas dicen “Manzanas”, “Naranjas” y “Mixta”, y TODAS las etiquetas están mal. Sacas una fruta de una sola caja. ¿De cuál, para saber todo?",["Manzanas","Naranjas","Mixta"],2,"La de “Mixta” tiene un solo tipo de fruta. Lo que saques te dice cuál es, y las otras dos se deducen."],
+["Si ayer fue el día después del lunes, ¿qué día será mañana?",["Miércoles","Jueves","Viernes","Martes"],1,"Ayer fue martes, hoy es miércoles, mañana jueves."],
+["Un tren de 1 km va a 60 km/h y entra a un túnel de 1 km. ¿Cuánto tarda en salir por completo?",["1 minuto","2 minutos","3 minutos","1.5 minutos"],1,"La punta recorre el túnel más el largo del tren: 2 km. A 60 km/h es 1 km por minuto."],
+["Un caracol sube 3 m de día y resbala 2 m de noche en un pozo de 10 m. ¿En qué día sale?",["Día 10","Día 8","Día 7","Día 9"],1,"Al empezar el día 8 está a 7 m; ese día sube 3 y sale antes de resbalar."],
+["Hoy tengo el triple de edad que mi hermano. En 10 años tendré el doble. ¿Cuántos años tengo?",["30","20","15","45"],0,"Si él tiene x: 3x + 10 = 2(x + 10), x = 10. Yo tengo 30."],
+["Un cuadrado se divide con sus dos diagonales. ¿Cuántos triángulos hay?",["4","6","8","10"],2,"4 pequeños, más 4 formados por dos pequeños juntos."],
+["Un gallo pone un huevo en la punta de un techo. ¿Hacia dónde cae?",["Izquierda","Derecha","Los gallos no ponen huevos"],2,"Lee siempre bien el enunciado."],
+["Si 3 gatos cazan 3 ratones en 3 minutos, ¿cuántos gatos cazan 100 ratones en 100 minutos?",["100","3","33","300"],1,"Cada gato caza 1 ratón cada 3 minutos; 3 gatos en 100 minutos cazan unos 100."],
+["Tienes una vela, una lámpara de aceite y una chimenea, y solo un cerillo. ¿Qué enciendes primero?",["La vela","La lámpara","La chimenea","El cerillo"],3,"Sin encender el cerillo no enciendes nada."],
+["Un ladrillo pesa 1 kg más medio ladrillo. ¿Cuánto pesa un ladrillo?",["1.5 kg","2 kg","1 kg","3 kg"],1,"x = 1 + x/2, entonces x/2 = 1 y x = 2 kg."],
+["¿Cuántas veces puedes restar 5 de 25?",["5","Una","Infinitas","4"],1,"La primera vez restas de 25; después ya restas de 20."],
+["Un pastor tiene 17 ovejas y se mueren todas menos 9. ¿Cuántas quedan?",["8","9","17","0"],1,"“Todas menos 9” quiere decir que sobreviven 9."],
+["Si tú me das una manzana, tenemos las mismas. Si yo te doy una, tú tienes el doble que yo. ¿Cuántas tengo yo?",["5","7","4","6"],0,"Tú tienes 2 más que yo (x = y + 2) y x + 1 = 2(y − 1). Sale y = 5 y x = 7."],
+["En un cuarto hay 4 esquinas; en cada una hay un gato, y frente a cada gato hay 3 gatos. ¿Cuántos gatos hay?",["4","12","16","7"],0,"Cada gato ve a los otros tres."],
+["Te dan 3 pastillas: una cada media hora. ¿Cuánto tiempo te duran?",["1.5 horas","1 hora","2 horas","30 minutos"],1,"Tomas una al inicio, otra a los 30 min y la última a los 60 min."],
+["¿Qué pesa más, un kilo de plumas o un kilo de hierro?",["El hierro","Las plumas","Pesan igual"],2,"Los dos pesan un kilo."],
+["Hay 3 interruptores afuera de un cuarto y un foco adentro. Solo puedes entrar una vez. ¿Cómo sabes cuál lo enciende?",["Prendes uno un rato, lo apagas, prendes otro y entras: si está apagado y caliente, es el primero","Prendes los tres","Es imposible","Adivinas"],0,"Usas el calor como información extra: encendido = el segundo, apagado y caliente = el primero, apagado y frío = el tercero."],
+["Un número de dos cifras: sus cifras suman 9 y, si lo inviertes, aumenta 27. ¿Cuál es?",["36","45","27","63"],0,"Invertir aumenta 9 × (diferencia de cifras) = 27, así que difieren en 3: 3 y 6."],
+["Si hoy es sábado, ¿qué día será dentro de 50 días?",["Sábado","Domingo","Lunes","Viernes"],1,"50 = 7 × 7 + 1. Siete semanas exactas más un día."],
+["Un reloj se atrasa 2 minutos cada hora. Lo pones a tiempo a las 12:00. ¿Qué hora marca a las 18:00 reales?",["17:48","17:52","18:12","17:58"],0,"6 horas × 2 minutos = 12 minutos de atraso."],
+["Un auto recorre la mitad de un camino a 30 km/h y la otra mitad a 60 km/h. ¿Su velocidad promedio?",["45 km/h","40 km/h","50 km/h","35 km/h"],1,"Si el camino mide 120 km: 60 km tardan 2 h y 60 km tardan 1 h. Son 120 km en 3 h = 40 km/h."],
+["Alicia dice: “Beto miente”. Beto dice: “Carlos miente”. Carlos dice: “Alicia y Beto mienten”. ¿Quién dice la verdad?",["Alicia","Beto","Carlos","Nadie"],1,"Si Beto dice la verdad, Carlos miente y Alicia miente: todo cuadra."],
+["Una botella y su tapón cuestan $11. La botella cuesta $10 más que el tapón. ¿Cuánto cuesta el tapón?",["$1","$0.50","$1.50","$0.10"],1,"t + (t + 10) = 11, entonces 2t = 1 y t = 0.50."],
+["Tienes dos cubetas de 3 y 5 litros. ¿Cuál es el menor número de vaciados en la de 5 para medir exactamente 4 litros?",["Es imposible","Llenas la de 5, pasas 3 a la de 3, tiras la de 3, pasas los 2 restantes, llenas la de 5 y completas la de 3","Llenas las dos","Pones 4 a ojo"],1,"Quedan 2 L en la de 3; al llenar la de 5 y completar la de 3 (solo cabe 1 L), quedan 4 L."],
+["Un padre y su hijo suman 36 años. El padre tiene 30 años más que el hijo. ¿Cuántos años tiene el hijo?",["6","3","4","5"],1,"h + (h + 30) = 36, entonces h = 3."]
+];
+const BANK=[
+["give up","stop trying; quit","rendirse, dejar de","Don’t ___ — you’re almost there."],
+["figure out","understand or solve","descifrar, entender","I need to ___ how this works."],
+["put off","postpone","posponer","Don’t ___ your homework until Sunday night."],
+["run out of","have none left","quedarse sin","We always ___ milk on Fridays."],
+["take after","resemble an older relative","parecerse a (un familiar)","Many kids ___ their parents."],
+["bring up","mention a topic","sacar un tema","Don’t ___ politics at dinner."],
+["get along with","have a good relationship with","llevarse bien con","I ___ most of my classmates."],
+["come up with","think of an idea","ocurrírsele algo","We need to ___ a name for the app."],
+["turn down","reject an offer","rechazar","It’s hard to ___ a good offer."],
+["catch up","reach the same level","ponerse al día","I need to ___ on my reading."],
+["hang out","spend time relaxing","pasar el rato","Let’s ___ after school."],
+["work out","exercise","hacer ejercicio","I try to ___ three times a week."],
+["show up","arrive; appear","llegar, aparecer","Please ___ on time."],
+["look up","search for information","buscar (información)","You can ___ new words in a dictionary."],
+["set up","prepare; configure","configurar, montar","It took an hour to ___ the new phone."],
+["carry on","continue","continuar","___ — you’re doing great!"],
+["point out","indicate; draw attention to","señalar","Let me ___ a small mistake."],
+["deal with","handle a problem","lidiar con","I can ___ stress better now."],
+["count on","depend on","contar con","You can always ___ me."],
+["break down","stop working (a machine)","descomponerse","Old cars often ___."],
+["end up","finally be in a situation","terminar (haciendo/en)","If you keep practicing, you’ll ___ really good."],
+["keep up with","stay at the same pace","seguir el ritmo de","It’s hard to ___ new technology."],
+["stand out","be easy to notice","destacar","Bright colors ___ in a minimalist design."],
+["run into","meet by chance","encontrarse con","I sometimes ___ old friends downtown."],
+["pick up","learn informally","aprender sobre la marcha","Kids ___ languages quickly."],
+["come across","find by chance","toparse con","You might ___ great ideas while reading."],
+["look into","investigate","investigar","I’ll ___ the problem tomorrow."],
+["get over","recover from","superar","It takes time to ___ a bad day."],
+["fall behind","not keep the pace","atrasarse","If you skip class, you’ll ___."],
+["get rid of","throw away","deshacerse de","I need to ___ the old clothes in my room."],
+["look after","take care of","cuidar","Can you ___ my dog this weekend?"],
+["turn out","result in the end","resultar","Things often ___ better than expected."],
+["a piece of cake","something very easy","pan comido","The first level was ___."],
+["break the ice","start a conversation and relax people","romper el hielo","A joke can ___ at a party."],
+["hit the books","study hard","ponerse a estudiar","Exams are coming, so I have to ___."],
+["under the weather","slightly sick","indispuesto","I’m feeling a bit ___ today."],
+["call it a day","stop working for now","dar por terminado","It’s late — let’s ___."],
+["once in a blue moon","very rarely","muy de vez en cuando","I eat fast food ___."],
+["cost an arm and a leg","be very expensive","costar un ojo de la cara","That phone must ___."],
+["get the hang of","learn how to do something","agarrarle la onda","After a week, you’ll ___ the guitar."],
+["on the same page","in agreement","en la misma sintonía","Let’s make sure we’re ___."],
+["speak your mind","say what you really think","decir lo que piensas","It’s good to ___, but respectfully."],
+["a blessing in disguise","something bad that turns out good","no hay mal que por bien no venga","Missing that bus was ___."],
+["spill the beans","reveal a secret","soltar la sopa","Come on, ___ — what happened?"],
+["sit on the fence","avoid making a decision","no decidirse","You can’t ___ forever."],
+["get out of hand","become uncontrollable","salirse de control","The party started to ___."],
+["burn the midnight oil","work late into the night","desvelarse trabajando","Before the exam, I had to ___."],
+["take it easy","relax","tomarlo con calma","It’s Sunday — ___."],
+["keep in mind","remember; consider","tener en cuenta","___ that the test is on Monday."],
+["give it a shot","try","intentarlo","You’ve never tried surfing? ___!"],
+["make the most of","use fully","aprovechar al máximo","___ your free time."],
+["think outside the box","be creative","pensar fuera de la caja","To solve this puzzle, you have to ___."],
+["learn by heart","memorize","aprender de memoria","Actors ___ their lines."],
+["in the long run","eventually; over time","a la larga","Saving money pays off ___."],
+["out of the blue","unexpectedly","de la nada","She called me ___."],
+["by the way","incidentally","por cierto","___, did you finish the book?"],
+["kill two birds with one stone","do two things at once","matar dos pájaros de un tiro","Learning English with songs lets you ___."],
+["the last straw","the final problem that makes you lose patience","la gota que derramó el vaso","Losing my keys again was ___."],
+["on cloud nine","extremely happy","feliz, en las nubes","When I passed the test, I was ___."],
+["the ball is in your court","it’s your decision now","ahora te toca a ti","I made my offer; now ___."],
+["better late than never","it’s good that it finally happened","más vale tarde que nunca","You finally started? ___!"],
+["get on my nerves","annoy me","sacarme de quicio","That noise starts to ___."],
+["make sense","be logical","tener sentido","Your idea doesn’t ___ to me."],
+["look forward to","be excited about the future","tener ganas de","I really ___ the holidays."]
+];
+const GRAM=[
+["I’m looking forward to ___ you next week.",["see","seeing","saw","have seen"],1,"Después de “look forward to” va -ing, porque “to” es preposición."],
+["If I ___ more free time, I would learn the guitar.",["have","had","will have","would have"],1,"Segundo condicional: If + pasado, would + verbo."],
+["Despite ___ tired, he finished the race.",["be","being","been","to be"],1,"Después de “despite” va sustantivo o -ing."],
+["I wish I ___ more for the exam yesterday.",["studied","had studied","would study","study"],1,"Para lamentar el pasado: wish + past perfect."],
+["He has been working here ___ 2022.",["for","since","during","from"],1,"“Since” + momento de inicio; “for” + duración."],
+["By the time you arrive, I ___ dinner.",["will finish","will have finished","finished","am finishing"],1,"Future perfect: algo terminado antes de cierto momento."],
+["He suggested ___ to the beach on Saturday.",["to go","going","go","went"],1,"“Suggest” + -ing."],
+["Unless you ___, you’ll miss the bus.",["hurry","don’t hurry","will hurry","hurried"],0,"“Unless” ya significa “if not”."],
+["She ___ here for five years and still loves it.",["has lived","lives","is living","lived"],0,"Present perfect para algo que empezó en el pasado y sigue."],
+["The book ___ by millions of people.",["has been read","has read","is reading","reads"],0,"Voz pasiva en present perfect: has been + participio."],
+["I’d rather you ___ tell anyone.",["didn’t","don’t","won’t","not"],0,"“I’d rather you” + pasado, aunque hable del presente."],
+["It’s time we ___ home.",["went","go","will go","going"],0,"“It’s time we” + pasado."],
+["Had I known, I ___ earlier.",["would have come","will come","came","would come"],0,"Tercer condicional con inversión: Had I known = If I had known."],
+["He’s used to ___ up early.",["getting","get","got","gets"],0,"“Be used to” + -ing = estar acostumbrado a."],
+["She made me ___ the dishes.",["do","to do","doing","did"],0,"“Make someone do” sin “to”."],
+["The more you practice, ___ you get.",["the better","better","the best","more better"],0,"Estructura: the more…, the better…"],
+["This is the girl ___ brother plays guitar.",["whose","who","which","whom"],0,"“Whose” indica posesión."],
+["You ___ have told me! I would have helped.",["should","must","can","will"],0,"“Should have” + participio = reproche sobre el pasado."],
+["He might ___ forgotten about the meeting.",["have","has","had","having"],0,"Modal + have + participio para suposiciones del pasado."],
+["I haven’t seen her ___ ages.",["for","since","during","from"],0,"“For ages” = desde hace mucho tiempo."],
+["Would you mind ___ the window?",["opening","to open","open","opened"],0,"“Would you mind” + -ing."],
+["Neither my brother nor I ___ coffee.",["like","likes","liking","to like"],0,"Con neither…nor, el verbo concuerda con el sujeto más cercano: I like."],
+["She asked me where ___.",["I lived","did I live","do I live","I live"],0,"En preguntas indirectas no se invierte el orden: where I lived."],
+["If it ___ tomorrow, we’ll stay home.",["rains","will rain","rained","would rain"],0,"Primer condicional: If + presente, will + verbo."],
+["I can’t remember ___ the door. Did I?",["locking","to lock","lock","locked"],0,"“Remember + -ing” = recordar algo que ya hiciste."],
+["Don’t forget ___ the lights when you leave.",["to turn off","turning off","turn off","turned off"],0,"“Forget + to” = olvidar hacer algo pendiente."],
+["Hardly ___ arrived when it started to rain.",["had we","we had","we have","have we"],0,"Con “hardly” al inicio, se invierte: hardly had we…"],
+["This is ___ interesting book I’ve ever read.",["the most","more","most","the more"],0,"Superlativo: the most + adjetivo largo."],
+["He speaks English ___ than his sister.",["more fluently","more fluent","fluently","most fluently"],0,"Comparativo de un adverbio: more fluently."],
+["We need ___ information before deciding.",["more","many","a few","few"],0,"“Information” es incontable: more/much, no many."]
+];
+const SPEAK=[
+"Talk about a habit you’d like to change and why.","Describe your perfect weekend.","What is a skill you want to master this year?","Explain how a video game you like works.","Describe your room and how you would redesign it.","What would you do with $10,000?","Talk about a person who inspires you.","Describe the best meal you’ve ever had.","If you could live in any city, which one and why?","Explain something you learned this week.","What makes a good friend?","Describe your town to a tourist.","What are the pros and cons of social media?","How will AI change jobs in the future?","Tell a funny story from school.","What would you invent to solve a real problem?","Describe a movie or series without saying its name.","What do you want to study and why?","Is it better to work for a company or for yourself?","Describe a place where you feel calm.","What advice would you give to your 12-year-old self?","Talk about a time you were proud of yourself.","Should students have homework? Why?","Describe your morning routine.","What’s the most useful app on your phone and why?","How do you deal with stress before an exam?","If you could meet any historical figure, who and why?","Explain how solar panels make electricity.","What does success mean to you?","Describe a song you love and how it makes you feel.","What would your ideal job look like?","Talk about a book or poem that stayed with you.","What would you change about your school?","Describe a tradition from Mexico to a foreigner.","Is it more important to be smart or to work hard?","What would you do if you were invisible for a day?","How do you make decisions when you’re not sure?","Talk about a mistake that taught you something.","Describe the future in 20 years.","Convince me to try your favorite food.","What do you do when you lose motivation?","Explain the rules of a sport or game.","Would you rather travel to the past or the future?","What makes a video go viral?","Describe your dream house."
+];
+const READ=[
+["Rima XXI","Gustavo Adolfo Bécquer","1871","¿Qué es poesía?, dices mientras clavas\nen mi pupila tu pupila azul.\n¿Qué es poesía? ¿Y tú me lo preguntas?\nPoesía... eres tú.","¿Por qué crees que el poeta responde con una persona y no con una definición?"],
+["Rima XXIII","Gustavo Adolfo Bécquer","1871","Por una mirada, un mundo;\npor una sonrisa, un cielo;\npor un beso... ¡yo no sé\nqué te diera por un beso!","¿Qué recurso usa el poeta para exagerar lo que siente?"],
+["Rima LIII","Gustavo Adolfo Bécquer","1871","Volverán las oscuras golondrinas\nen tu balcón sus nidos a colgar,\ny otra vez con el ala a sus cristales\njugando llamarán.","¿Qué cosas vuelven siempre en tu vida y cuáles no?"],
+["Proverbios y cantares, XXIX","Antonio Machado","1917","Caminante, son tus huellas\nel camino y nada más;\ncaminante, no hay camino,\nse hace camino al andar.","¿Qué camino estás haciendo ahora, aunque todavía no esté claro?"],
+["Retrato","Antonio Machado","1912","Mi infancia son recuerdos de un patio de Sevilla,\ny un huerto claro donde madura el limonero;","¿Qué lugar resume tu infancia en una imagen?"],
+["En paz","Amado Nervo","1915","Muy cerca de mi ocaso, yo te bendigo, Vida,\nporque nunca me diste ni esperanza fallida,\nni trabajos injustos, ni pena inmerecida;\nporque veo al final de mi rudo camino\nque yo fui el arquitecto de mi propio destino;","¿En qué cosas ya eres arquitecto de tu destino?"],
+["Canción de otoño en primavera","Rubén Darío","1905","Juventud, divino tesoro,\n¡ya te vas para no volver!\nCuando quiero llorar, no lloro…\ny a veces lloro sin querer…","Si la juventud es un tesoro, ¿en qué te gustaría invertirla?"],
+["Lo fatal","Rubén Darío","1905","Dichoso el árbol, que es apenas sensitivo,\ny más la piedra dura porque esa ya no siente,\npues no hay dolor más grande que el dolor de ser vivo,\nni mayor pesadumbre que la vida consciente.","¿Estás de acuerdo en que pensar mucho a veces pesa? ¿Por qué?"],
+["Redondillas","Sor Juana Inés de la Cruz","1689","Hombres necios que acusáis\na la mujer sin razón,\nsin ver que sois la ocasión\nde lo mismo que culpáis.","¿Qué injusticia señala Sor Juana? ¿Sigue pasando hoy?"],
+["Soneto 145","Sor Juana Inés de la Cruz","1689","Este, que ves, engaño colorido,\nque del arte ostentando los primores,\ncon falsos silogismos de colores\nes cauteloso engaño del sentido;","Habla de un retrato que miente. ¿Qué “retratos” de hoy engañan, como las fotos con filtro?"],
+["Coplas por la muerte de su padre","Jorge Manrique","1476","Nuestras vidas son los ríos\nque van a dar en la mar,\nque es el morir;","¿Por qué crees que compara la vida con un río?"],
+["La vida es sueño","Pedro Calderón de la Barca","1635","¿Qué es la vida? Un frenesí.\n¿Qué es la vida? Una ilusión,\nuna sombra, una ficción,\ny el mayor bien es pequeño;\nque toda la vida es sueño,\ny los sueños, sueños son.","Si la vida fuera un sueño, ¿cambiaría lo que haces?"],
+["Amor constante más allá de la muerte","Francisco de Quevedo","1648","serán ceniza, mas tendrá sentido;\npolvo serán, mas polvo enamorado.","¿Qué crees que sobrevive de una persona cuando ya no está?"],
+["Versos sencillos, I","José Martí","1891","Yo soy un hombre sincero\nde donde crece la palma,\ny antes de morirme quiero\nechar mis versos del alma.","¿Qué te gustaría “echar del alma” antes de que pase el tiempo?"],
+["Versos sencillos, XXXIX","José Martí","1891","Cultivo una rosa blanca\nen julio como en enero,\npara el amigo sincero\nque me da su mano franca.","¿Quién es para ti un amigo sincero? ¿Cómo lo sabes?"],
+["Platero y yo","Juan Ramón Jiménez","1914","Platero es pequeño, peludo, suave; tan blando por fuera, que se diría todo de algodón, que no lleva huesos.","Describe a un animal o a alguien que quieras con tres adjetivos, como lo hace el autor."],
+["Romance sonámbulo","Federico García Lorca","1928","Verde que te quiero verde.\nVerde viento. Verdes ramas.","¿Qué efecto tiene repetir tanto la misma palabra?"],
+["Don Quijote de la Mancha","Miguel de Cervantes","1605","En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor.","Es uno de los inicios más famosos. ¿Por qué crees que no quiere decir el nombre del lugar?"],
+["Don Quijote de la Mancha","Miguel de Cervantes","1615","La libertad, Sancho, es uno de los más preciosos dones que a los hombres dieron los cielos; con ella no pueden igualarse los tesoros que encierra la tierra ni el mar encubre.","¿Qué significa para ti ser libre?"],
+["“Hope” is the thing with feathers","Emily Dickinson","1891","“Hope” is the thing with feathers –\nThat perches in the soul –\nAnd sings the tune without the words –\nAnd never stops – at all –","Why does she compare hope to a bird?"],
+["I’m Nobody! Who are you?","Emily Dickinson","1891","I’m Nobody! Who are you?\nAre you – Nobody – too?","Is it better to be “Nobody” or to be famous? Why?"],
+["The Road Not Taken","Robert Frost","1916","Two roads diverged in a wood, and I—\nI took the one less traveled by,\nAnd that has made all the difference.","Think of a choice you made that was different from others. What happened?"],
+["Stopping by Woods on a Snowy Evening","Robert Frost","1923","The woods are lovely, dark and deep,\nBut I have promises to keep,\nAnd miles to go before I sleep,\nAnd miles to go before I sleep.","What “promises” do you have to keep before you rest?"],
+["Nothing Gold Can Stay","Robert Frost","1923","Nature’s first green is gold,\nHer hardest hue to hold.","What good things in life are hard to keep?"],
+["If—","Rudyard Kipling","1910","If you can keep your head when all about you\nAre losing theirs and blaming it on you,\nIf you can trust yourself when all men doubt you,\nBut make allowance for their doubting too;","What does “keep your head” mean here?"],
+["Invictus","William Ernest Henley","1888","It matters not how strait the gate,\nHow charged with punishments the scroll,\nI am the master of my fate,\nI am the captain of my soul.","Do you feel you are the captain of your life? Why or why not?"],
+["Hamlet","William Shakespeare","1603","To be, or not to be: that is the question:","Why do you think this line is so famous?"],
+["Hamlet","William Shakespeare","1603","This above all: to thine own self be true,\nAnd it must follow, as the night the day,\nThou canst not then be false to any man.","In your own words: what is this advice about?"],
+["As You Like It","William Shakespeare","1623","All the world’s a stage,\nAnd all the men and women merely players;","If life is a stage, what role are you playing now?"],
+["Sonnet 18","William Shakespeare","1609","Shall I compare thee to a summer’s day?\nThou art more lovely and more temperate:","Why is a person “better” than a summer day, according to the poet?"],
+["Julius Caesar","William Shakespeare","1599","The fault, dear Brutus, is not in our stars,\nBut in ourselves, that we are underlings.","Do we control our destiny, or is it luck?"],
+["Auguries of Innocence","William Blake","1863","To see a World in a Grain of Sand\nAnd a Heaven in a Wild Flower,\nHold Infinity in the palm of your hand\nAnd Eternity in an hour.","What small thing has made you think about something huge?"],
+["Ulysses","Alfred Tennyson","1842","To strive, to seek, to find, and not to yield.","Which of these four verbs describes you best right now?"],
+["O Me! O Life!","Walt Whitman","1892","That you are here—that life exists and identity,\nThat the powerful play goes on, and you may contribute a verse.","If your life were a verse in that play, what would it be about?"],
+["Walden","Henry David Thoreau","1854","I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach.","What would “living deliberately” look like for you this week?"],
+["Walden","Henry David Thoreau","1854","The mass of men lead lives of quiet desperation.","Why do you think people live like this? How can you avoid it?"],
+["A Tale of Two Cities","Charles Dickens","1859","It was the best of times, it was the worst of times,","Can a time in your life be the best and the worst at once?"],
+["Pride and Prejudice","Jane Austen","1813","It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.","This line is ironic. What is Austen really making fun of?"],
+["Alice’s Adventures in Wonderland","Lewis Carroll","1865","“Would you tell me, please, which way I ought to go from here?”\n“That depends a good deal on where you want to get to,” said the Cat.","Do you know where you want to get to? How does that change your path?"],
+["The Prophet","Kahlil Gibran","1923","Your children are not your children.\nThey are the sons and daughters of Life’s longing for itself.","What do you think Gibran means?"],
+["Gitanjali, 35","Rabindranath Tagore","1912","Where the mind is without fear and the head is held high;\nWhere knowledge is free;","Describe a place where your mind feels “without fear”."],
+["Lady Windermere’s Fan","Oscar Wilde","1892","We are all in the gutter, but some of us are looking at the stars.","What are “your stars” right now?"]
+];
+
+/* =================== GENERADORES (retos infinitos) =================== */
+const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function numOpts(ans,spread,ex){const s=new Set([ans]);let g=0;while(s.size<4&&g<60){g++;const v=ans+R(-spread,spread);if(v!==ans&&v>=0)s.add(v)}const o=shuffle([...s]);return{o:o.map(String),a:o.indexOf(ans)}}
+const DAYS=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+const NAMES=["Ana","Beto","Caro","Dani","Eli","Fer","Gabo","Iris","Juan","Lu","Mau","Nadia","Pau","Rafa","Sofi","Toño"];
+const GENS=[
+()=>{const a=R(2,30),d=R(3,15),t=[0,1,2,3,4].map(i=>a+i*d),ans=a+5*d,r=numOpts(ans,d);return{q:"¿Qué número sigue? "+t.join(", ")+", …",...r,ex:"Cada número suma "+d+": "+t[4]+" + "+d+" = "+ans+"."}},
+()=>{const a=R(2,5),k=R(2,3),t=[0,1,2,3].map(i=>a*k**i),ans=a*k**4,r=numOpts(ans,a*k*2);return{q:"¿Qué número sigue? "+t.join(", ")+", …",...r,ex:"Cada número se multiplica por "+k+": "+t[3]+" × "+k+" = "+ans+"."}},
+()=>{const c=R(-3,5),s=R(1,4),t=[0,1,2,3,4].map(i=>(s+i)**2+c),ans=(s+5)**2+c,r=numOpts(ans,6);return{q:"¿Qué número sigue? "+t.join(", ")+", …",...r,ex:"Son cuadrados "+(c?(c>0?"más ":"menos ")+Math.abs(c):"")+": "+(s+5)+"² "+(c?(c>0?"+ ":"− ")+Math.abs(c):"")+"= "+ans+"."}},
+()=>{const a=R(1,20),p=R(2,9),q=R(-6,-1),t=[a];for(let i=1;i<6;i++)t.push(t[i-1]+(i%2?p:q));const ans=t[5]+q,r=numOpts(ans,4);return{q:"¿Qué número sigue? "+t.join(", ")+", …",...r,ex:"Alterna: suma "+p+", resta "+Math.abs(q)+". Toca restar "+Math.abs(q)+": "+ans+"."}},
+()=>{const a=R(1,10),d=R(1,4),k=R(1,3),t=[a];let dd=d;for(let i=1;i<5;i++){t.push(t[i-1]+dd);dd+=k}const ans=t[4]+dd,r=numOpts(ans,5);return{q:"¿Qué número sigue? "+t.join(", ")+", …",...r,ex:"Las diferencias crecen de "+k+" en "+k+". La siguiente diferencia es "+dd+": "+ans+"."}},
+()=>{const p=[10,15,20,25,30,40,60,75][R(0,7)],n=R(2,30)*20,ans=p*n/100,r=numOpts(ans,Math.max(4,Math.round(ans/4)));return{q:"Cálculo mental: ¿cuánto es el "+p+"% de "+n+"?",...r,ex:"El 10% de "+n+" es "+n/10+". El "+p+"% es "+(p/10)+" veces eso: "+ans+"."}},
+()=>{const B=R(3,10),t=R(1,10),A=2*B+t,r=numOpts(t,4);return{q:"Tengo "+A+" años y mi primo tiene "+B+". ¿En cuántos años tendré el doble de su edad?",...r,ex:A+" + x = 2("+B+" + x), entonces x = "+A+" − "+2*B+" = "+t+"."}},
+()=>{const w1=R(2,6),h1=R(2,8),tot=w1*h1;const ds=[];for(let i=1;i<=tot;i++)if(tot%i===0&&i!==w1&&i>1&&i<=12)ds.push(i);const w2=ds[R(0,ds.length-1)],ans=tot/w2,r=numOpts(ans,4);return{q:w1+" personas pintan una barda en "+h1+" horas. ¿Cuántas horas tardan "+w2+" personas, trabajando igual de rápido?",...r,ex:"El trabajo total es "+w1+" × "+h1+" = "+tot+" horas-persona. Entre "+w2+": "+ans+" horas."}},
+()=>{const n=shuffle(NAMES.slice()).slice(0,4);const rel=[[0,1],[1,2],[2,3]].map(([a,b])=>n[a]+" es más alto que "+n[b]);shuffle(rel);const ask=Math.random()<.5;const ans=ask?n[3]:n[0];const o=shuffle(n.slice());return{q:rel.join(". ")+". ¿Quién es el "+(ask?"más bajo":"más alto")+"?",o,a:o.indexOf(ans),ex:"Ordenados de mayor a menor: "+n.join(" > ")+"."}}
+,()=>{const d0=R(0,6),n=R(10,300),ans=(d0+n)%7,o=shuffle([ans,(ans+1)%7,(ans+6)%7,(ans+3)%7]);return{q:"Si hoy es "+DAYS[d0]+", ¿qué día será dentro de "+n+" días?",o:o.map(i=>DAYS[i]),a:o.indexOf(ans),ex:n+" = 7 × "+Math.floor(n/7)+" + "+(n%7)+". Las semanas completas no cambian el día; avanzas "+(n%7)+"."}},
+()=>{const h=R(1,11),ans=Math.min(30*h,360-30*h),r=numOpts(ans,30);return{q:"¿Qué ángulo forman las manecillas de un reloj a las "+h+":00?",o:r.o.map(x=>x+"°"),a:r.a,ex:"Cada hora son 30°. "+h+" × 30° = "+30*h+"°"+(30*h>180?"; el ángulo menor es 360° − "+30*h+"° = "+ans+"°":"")+"."}},
+()=>{const a=R(12,49),b=R(11,19),ans=a*b,r=numOpts(ans,15);return{q:"Cálculo mental: "+a+" × "+b,...r,ex:a+" × "+b+" = "+a+" × 10 + "+a+" × "+(b-10)+" = "+a*10+" + "+a*(b-10)+" = "+ans+"."}},
+()=>{const v=R(2,6)*20,t=[30,60,90,120][R(0,3)],ans=v*t/60,r=numOpts(ans,15);return{q:"Un auto va a "+v+" km/h durante "+t+" minutos. ¿Cuántos km recorre?",...r,ex:t+" minutos son "+t/60+" h. "+v+" × "+t/60+" = "+ans+" km."}},
+()=>{const p=R(3,9)*10,d=[10,20,25,50][R(0,3)],ans=p-p*d/100,r=numOpts(ans,8);return{q:"Una playera cuesta $"+p*10+" y tiene "+d+"% de descuento. ¿Cuánto pagas? (en decenas de pesos: escribe el total ÷ 10)",...r,ex:"Descuento: "+d+"% de $"+p*10+" = $"+p*d/10+". Pagas $"+ans*10+", que es "+ans+" en decenas."}}
+];
+GENS.pop(); /* el último era confuso; lo dejamos fuera */
+function genLogic(){const g=GENS[R(0,GENS.length-1)]();return{q:g.q,o:g.o,a:g.a,ex:g.ex}}
+function genEng(){
+  const i=R(0,BANK.length-1),it=BANK[i],t=R(0,2);
+  const others=shuffle(BANK.map((_,j)=>j).filter(j=>j!==i)).slice(0,3);
+  const full=it[3].replace("___",it[0]);
+  if(t===0){const o=shuffle([i,...others]);return{q:it[3],o:o.map(j=>BANK[j][0]),a:o.indexOf(i),ex:"“"+it[0]+"” = "+it[2]+". "+full}}
+  if(t===1){const o=shuffle([i,...others]);return{q:"What does “"+it[0]+"” mean?",o:o.map(j=>BANK[j][1]),a:o.indexOf(i),ex:"“"+it[0]+"” = "+it[2]+". Example: "+full}}
+  const o=shuffle([i,...others]);return{q:"¿Qué significa “"+it[0]+"” en español?",o:o.map(j=>BANK[j][2]),a:o.indexOf(i),ex:"Example: "+full};
+}
+const fromArr=x=>({q:x[0],o:x[1],a:x[2],ex:x[3]});
+
+/* =================== ESTADO =================== */
+const KEY="pulso_v1";
+const DEF={app:"Pulso",user:"Noé",xp:0,best:0,sound:true,
+  tasks:[{id:1,text:"Ordenar mi cuarto (15 min)",cat:"Casa",done:false},{id:2,text:"Repasar física 25 min",cat:"Escuela",done:false},{id:3,text:"Practicar guitarra 10 min",cat:"Casa",done:false}],
+  notes:[],log:{},decks:{},nextId:4};
+let S;
+try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){S=Object.assign({},DEF)}
+if(!S.decks)S.decks={};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+const pad=n=>String(n).padStart(2,"0");
+const k=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const today=()=>k(new Date());
+function L(key){key=key||today();if(!S.log[key])S.log[key]={xp:0,tasks:0,notes:0};return S.log[key]}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function nextFrom(type,len){let d=S.decks[type];if(!d||d.n!==len||d.p>=len){d={n:len,p:0,o:shuffle([...Array(len).keys()])};S.decks[type]=d}return d.o[d.p++]}
+function daily(){const d=L();if(!d.items){d.items={quote:nextFrom("quote",QUOTES.length),fact:nextFrom("fact",FACTS.length),logic:fromArr(LOGIC[nextFrom("logic",LOGIC.length)]),eng:Math.random()<.5?fromArr(GRAM[nextFrom("gram",GRAM.length)]):genEng(),speak:nextFrom("speak",SPEAK.length),read:nextFrom("read",READ.length)};save()}return d.items}
+function lvl(xp){let l=1,need=100,r=xp;while(r>=need){r-=need;l++;need=100+(l-1)*50}return{l,cur:r,need}}
+function streak(){const d=new Date();if(!(S.log[k(d)]&&S.log[k(d)].xp>0))d.setDate(d.getDate()-1);let c=0;while(S.log[k(d)]&&S.log[k(d)].xp>0){c++;d.setDate(d.getDate()-1)}return c}
+
+let view="hoy",retoTab="logic",taskFilter="Todas",confirmReset=false,delNote=null,animNext=true;
+const X={logic:null,eng:null,read:null}; /* retos extra de esta sesión */
+let lastPct=null;
+
+/* =================== SONIDO (suave y con eco) =================== */
+let ctx=null,bus=null;
+function ac(){try{if(!ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;ctx=new C();
+  const master=ctx.createGain();master.gain.value=.9;const lp=ctx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=2400;lp.Q.value=.4;
+  const dl=ctx.createDelay(1);dl.delayTime.value=.21;const fb=ctx.createGain();fb.gain.value=.3;const wet=ctx.createGain();wet.gain.value=.22;
+  lp.connect(master);lp.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(master);master.connect(ctx.destination);bus=lp}
+  if(ctx.state==="suspended")ctx.resume();return ctx}catch(e){return null}}
+function tone(f,st,dur,vol){const c=ac();if(!c)return;const t=c.currentTime+st+.01;
+  [[f,1,"sine"],[f*2,.12,"sine"],[f*1.003,.35,"triangle"]].forEach(([fr,m,ty])=>{const o=c.createOscillator(),g=c.createGain();o.type=ty;o.frequency.setValueAtTime(fr,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol*m,t+.025);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(bus);o.start(t);o.stop(t+dur+.05)})}
+const SFX={
+ tap:()=>tone(1046,0,.32,.022),
+ nav:()=>{tone(587,0,.45,.03);tone(880,.075,.6,.026)},
+ open:()=>{tone(698,0,.45,.026);tone(1046,.09,.7,.022)},
+ check:()=>{tone(659,0,.55,.04);tone(988,.1,.85,.034)},
+ uncheck:()=>{tone(784,0,.4,.028);tone(587,.09,.55,.026)},
+ ok:()=>[784,988,1175,1568].forEach((f,i)=>tone(f,i*.09,.95,.028)),
+ bad:()=>{tone(392,0,.55,.03);tone(330,.13,.75,.028)},
+ level:()=>[523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,i*.11,1.4,.026)),
+ del:()=>{tone(440,0,.35,.026);tone(330,.07,.5,.022)}
+};
+function play(n){if(S.sound)try{SFX[n]()}catch(e){}}
+
+/* =================== XP =================== */
+let toastT;
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),1500)}
+function addXP(n){const b=lvl(S.xp).l;S.xp=Math.max(0,S.xp+n);const d=L();d.xp=Math.max(0,d.xp+n);S.best=Math.max(S.best||0,streak());if(n>0)toast("+"+n+" XP");save();const a=lvl(S.xp).l;if(a>b)setTimeout(()=>levelUp(a),500)}
+function levelUp(n){play("level");document.getElementById("overlay").innerHTML='<div class="lvlup" data-act="close"><div class="box"><div class="ring"></div><div class="label">Subiste de nivel</div><b>'+n+'</b><button class="btn accent" style="margin-top:20px" data-act="close">Seguir</button></div></div>'}
+
+/* =================== ICONOS =================== */
+const I={
+ hoy:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ tareas:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+ retos:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3z"/>',
+ notas:'<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+ progreso:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+ logic:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3z"/>',
+ eng:'<path d="M4 5h16v11H9l-5 4z"/>',
+ read:'<path d="M3 5c3-1 6-.5 9 1.5C15 4.5 18 4 21 5v14c-3-1-6-.5-9 1.5C9 18.5 6 18 3 19z"/><path d="M12 6.5V20"/>',
+ fire:'<path d="M12 22c4 0 7-3 7-7 0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-3 3-5 5-5 8 0 4 3 7 7 7z"/>',
+ ck:'<path d="M6 12.5l4 4 8-9"/>'
+};
+const ic=(n,s,w)=>'<svg width="'+(s||20)+'" height="'+(s||20)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+(w||1.8)+'" stroke-linecap="round" stroke-linejoin="round">'+I[n]+'</svg>';
+const NAV=[["hoy","Hoy"],["tareas","Tareas"],["retos","Retos"],["notas","Notas"],["progreso","Progreso"]];
+
+/* =================== VISTAS =================== */
+function greet(){const h=new Date().getHours();return h<12?"Buenos días":h<19?"Buenas tardes":"Buenas noches"}
+function st(v){return v==="ok"||v===true?'<span class="st ok">'+ic("ck",14,2.4)+'</span>':v==="no"?'<span class="st no">'+ic("ck",14,2.4)+'</span>':'<span class="st"></span>'}
+
+function vHoy(){
+  const lv=lvl(S.xp),it=daily(),q=QUOTES[it.quote],d=L(),sk=streak();
+  const y=new Date();y.setDate(y.getDate()-1);const yl=S.log[k(y)];
+  let ayer;if(yl&&yl.xp>0){const r=[yl.logic,yl.eng].filter(Boolean).length+(yl.read?1:0);ayer='Ganaste <b>'+yl.xp+' XP</b>, completaste '+yl.tasks+' '+(yl.tasks===1?"tarea":"tareas")+' y '+r+' '+(r===1?"reto":"retos")+'.'}
+  else ayer="Ayer no hubo actividad. Hoy es buen día para empezar.";
+  const pend=S.tasks.filter(t=>!t.done).slice(0,3);
+  const pct=Math.round(lv.cur/lv.need*100);
+  return '<h1>'+greet()+',<br><em>'+esc(S.user)+'</em></h1><div class="stack anim">'+
+  '<div class="card"><div class="level-top"><div><div class="label">Nivel</div><div class="level-n">'+lv.l+'</div></div><div class="small muted" style="font-variant-numeric:tabular-nums">'+lv.cur+' / '+lv.need+' XP</div></div><div class="bar"><i id="xpbar" data-p="'+pct+'"></i></div><div class="meta-row"><span>Hoy <b>'+d.xp+' XP</b></span><span>Racha <b>'+sk+' '+(sk===1?"día":"días")+'</b></span></div></div>'+
+  '<div class="card"><div class="label">Quote of the day</div><p class="quote">'+esc(q[0])+'</p><p class="quote-es">'+esc(q[1])+'</p><div class="quote-a">'+esc(q[2])+'</div></div>'+
+  '<div class="card"><div class="label">Ayer</div><p class="fact">'+ayer+'</p></div>'+
+  '<div class="card"><div class="label">Dato del día</div><p class="fact">'+esc(FACTS[it.fact])+'</p></div>'+
+  '<div><div class="sec"><span class="label">Retos de hoy</span></div><div class="card">'+
+   '<button class="row" data-act="goreto" data-t="logic"><span class="dot">'+ic("logic",19)+'</span><span class="grow"><b>Mente</b><br><span class="small muted">Lógica · +15 XP</span></span>'+st(d.logic)+'</button>'+
+   '<button class="row" data-act="goreto" data-t="eng"><span class="dot">'+ic("eng",19)+'</span><span class="grow"><b>English</b><br><span class="small muted">B2 · +15 XP</span></span>'+st(d.eng)+'</button>'+
+   '<button class="row" data-act="goreto" data-t="read"><span class="dot">'+ic("read",19)+'</span><span class="grow"><b>Lectura</b><br><span class="small muted">'+esc(READ[it.read][1])+' · +10 XP</span></span>'+st(d.read)+'</button>'+
+  '</div></div>'+
+  '<div><div class="sec"><span class="label">Pendientes</span></div>'+(pend.length?'<div class="card">'+pend.map(taskRow).join("")+'</div>':'<div class="card empty">Sin pendientes por ahora.</div>')+'</div>'+
+  '</div>';
+}
+function taskRow(t){return '<div class="task'+(t.done?" done":"")+'" id="t'+t.id+'"><button class="check" data-act="toggle" data-id="'+t.id+'" aria-label="Completar">'+ic("ck",15,2.4)+'</button><div class="txt"><span>'+esc(t.text)+'</span><span class="tag">'+esc(t.cat)+'</span></div><button class="x" data-act="deltask" data-id="'+t.id+'" aria-label="Borrar">×</button></div>'}
+
+function vTareas(){
+  const f=t=>taskFilter==="Todas"||t.cat===taskFilter;
+  const p=S.tasks.filter(t=>!t.done&&f(t)),dn=S.tasks.filter(t=>t.done&&f(t));
+  return '<h1>Tareas</h1><div class="anim">'+
+  '<form class="add" id="taskForm"><input type="text" id="taskIn" placeholder="Nueva tarea" maxlength="120" autocomplete="off"><select id="taskCat"><option>Escuela</option><option>Casa</option></select><button class="btn" type="submit">Agregar</button></form>'+
+  '<div class="chips">'+["Todas","Escuela","Casa"].map(x=>'<button data-act="filter" data-f="'+x+'" class="'+(taskFilter===x?"on":"")+'">'+x+'</button>').join("")+'</div>'+
+  (p.length?'<div class="card">'+p.map(taskRow).join("")+'</div>':'<div class="card empty">Todo listo por aquí.</div>')+
+  (dn.length?'<div class="sec"><span class="label">Completadas</span><button class="x small" style="font-size:13px;font-weight:700" data-act="cleardone">Limpiar</button></div><div class="card">'+dn.map(taskRow).join("")+'</div>':'')+
+  '<p class="small muted" style="margin-top:16px">Cada tarea vale +10 XP.</p></div>';
+}
+
+function quiz(item,stt,pick,xp,kind,extra){
+  const ans=!!stt;let h='<div class="label">'+(extra?"Reto extra":"Reto del día")+'</div><p class="q">'+esc(item.q)+'</p><div class="opts">';
+  item.o.forEach((o,i)=>{let c="";if(ans){c=i===item.a?" right":(i===pick?" wrong":" dim")}h+='<button class="opt'+c+'" data-act="answer" data-k="'+kind+'" data-x="'+(extra?1:0)+'" data-i="'+i+'"'+(ans?" disabled":"")+'>'+esc(o)+'</button>'});
+  h+='</div>';
+  if(ans)h+='<div class="explain reveal"><b>'+(stt==="ok"?"Correcto":"Casi")+(xp?" · +"+xp+" XP":"")+'</b>'+esc(item.ex)+'</div><div class="actions"><button class="btn accent" data-act="more" data-k="'+kind+'">Otro reto</button></div>';
+  return h;
+}
+function vRetos(){
+  const d=L(),it=daily();let body="";
+  const tabs=[["logic","Mente"],["eng","English"],["read","Lectura"]],ti=tabs.findIndex(t=>t[0]===retoTab);
+  if(retoTab==="logic"||retoTab==="eng"){
+    const x=X[retoTab];
+    body='<div class="card">'+(x?quiz(x.item,x.st,x.pick,x.xp,retoTab,true):quiz(it[retoTab],d[retoTab],d[retoTab+"Pick"],d[retoTab+"Xp"],retoTab,false))+'</div>';
+    if(retoTab==="logic")body+='<p class="small muted" style="margin-top:14px">Piensa antes de responder. Sin IA y sin calculadora.</p>';
+    else body+='<div class="card" style="margin-top:12px"><div class="label">Speaking · 30 seconds</div><p class="q" style="margin-bottom:0">'+esc(SPEAK[it.speak])+'</p><div class="actions">'+(d.speak?'<span class="done-pill">'+ic("ck",16,2.4)+'Practicado · +5 XP</span>':'<button class="btn ghost" data-act="speak">Lo dije en voz alta</button>')+'</div></div>';
+  } else {
+    const extra=X.read!==null,ri=extra?X.read.i:it.read,r=READ[ri],done=extra?X.read.done:d.read;
+    body='<div class="card"><div class="label">'+(extra?"Lectura extra":"Lectura del día")+'</div><p class="poem">'+esc(r[3])+'</p><div class="poem-meta"><b>'+esc(r[0])+'</b> · '+esc(r[1])+', '+r[2]+'</div><div class="actions">'+(done?'<span class="done-pill">'+ic("ck",16,2.4)+'Leído</span><button class="btn ghost" data-act="more" data-k="read">Otra lectura</button>':'<button class="btn accent" data-act="read">Lo leí</button>')+'</div></div>'+
+    '<div class="card" style="margin-top:12px"><div class="label">Para pensar</div><p class="q" style="margin-bottom:12px">'+esc(r[4])+'</p><textarea id="refl" placeholder="Tu respuesta (se guarda en Notas)"></textarea><div class="actions"><button class="btn ghost" data-act="saverefl">Guardar en notas</button></div></div>';
+  }
+  return '<h1>Retos</h1><div class="seg"><i style="transform:translateX('+ti*100+'%)"></i>'+tabs.map(([id,n])=>'<button data-act="tab" data-t="'+id+'" class="'+(retoTab===id?"on":"")+'">'+n+'</button>').join("")+'</div><div style="margin-top:16px" class="anim" id="retoBody">'+body+'</div>';
+}
+
+function vNotas(){
+  return '<h1>Notas</h1><div class="anim">'+
+  '<form class="card stack" id="noteForm" style="background:transparent;padding:0"><input type="text" id="noteT" placeholder="Título" maxlength="80"><textarea id="noteB" placeholder="Lo que aprendiste, un resumen, una idea"></textarea><button class="btn" type="submit">Guardar nota</button></form>'+
+  '<div class="sec"><span class="label">'+S.notes.length+' '+(S.notes.length===1?"nota":"notas")+'</span></div>'+
+  (S.notes.length?'<div class="stack">'+S.notes.map(n=>'<div class="card note"><h3>'+esc(n.t||"Sin título")+'</h3><p>'+esc(n.b)+'</p><div class="meta"><span class="small muted">'+n.d+'</span>'+(delNote===n.id?'<span style="display:flex;gap:6px"><button class="btn ghost" data-act="canceldel">No</button><button class="btn danger" data-act="delnote" data-id="'+n.id+'">Borrar</button></span>':'<button class="x" data-act="askdel" data-id="'+n.id+'" aria-label="Borrar">×</button>')+'</div></div>').join("")+'</div>':'<div class="card empty">Aquí viven tus resúmenes. Cada nota vale +5 XP (hasta 4 al día).</div>')+'</div>';
+}
+
+function vProgreso(){
+  const lv=lvl(S.xp);let tasks=0,ok=0,ext=0;
+  Object.values(S.log).forEach(d=>{tasks+=d.tasks||0;if(d.logic==="ok")ok++;if(d.eng==="ok")ok++;if(d.read)ok++;ext+=d.extra||0});
+  const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push({d,xp:(S.log[k(d)]||{}).xp||0})}
+  const max=Math.max(50,...days.map(x=>x.xp)),W=320,H=160,pb=24,pt=20,bw=26,gap=(W-bw*7)/6,LET=["D","L","M","M","J","V","S"];
+  let bars="";days.forEach((x,i)=>{const h=Math.max(Math.round((H-pb-pt)*x.xp/max),3),xx=i*(bw+gap),isT=i===6;
+    bars+='<rect x="'+xx+'" y="'+(H-pb-h)+'" width="'+bw+'" height="'+h+'" rx="8" fill="'+(isT?"var(--accent)":"var(--sunk)")+'" style="animation-delay:'+(i*.05)+'s"/>';
+    if(x.xp>0)bars+='<text x="'+(xx+bw/2)+'" y="'+(H-pb-h-6)+'" text-anchor="middle">'+x.xp+'</text>';
+    bars+='<text x="'+(xx+bw/2)+'" y="'+(H-6)+'" text-anchor="middle"'+(isT?' style="fill:var(--ink);font-weight:700"':'')+'>'+LET[x.d.getDay()]+'</text>'});
+  const week=days.reduce((a,b)=>a+b.xp,0);
+  return '<h1>Progreso</h1><div class="anim"><div class="stats">'+
+   [["Nivel",lv.l],["XP total",S.xp],["Racha",streak()],["Mejor racha",Math.max(S.best||0,streak())],["Tareas hechas",tasks],["Retos logrados",ok+ext]].map(([a,b])=>'<div class="stat"><span>'+a+'</span><b>'+b+'</b></div>').join("")+
+   '</div><div class="sec"><span class="label">Últimos 7 días</span><span class="small muted">'+week+' XP</span></div><div class="card"><svg class="barg" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="XP por día">'+bars+'</svg></div>'+
+   '<p class="small muted" style="margin-top:16px">Compara esta gráfica con tu tiempo en juegos y Reels de Bienestar digital.</p></div>';
+}
+
+function vSettings(){
+  return '<div class="sheet-bg" data-act="close"><div class="sheet" data-stop="1"><h1 style="margin:0">Ajustes</h1>'+
+  '<div class="field"><label for="setApp">Nombre de la app</label><input type="text" id="setApp" value="'+esc(S.app)+'" maxlength="16"></div>'+
+  '<div class="field"><label for="setUser">Tu nombre</label><input type="text" id="setUser" value="'+esc(S.user)+'" maxlength="24"></div>'+
+  '<div class="switch"><b>Sonidos</b><button class="btn '+(S.sound?"accent":"ghost")+'" data-act="sound">'+(S.sound?"Activados":"Apagados")+'</button></div>'+
+  (window.PULSO_PWA?'<div class="switch"><span><b>Recordatorio diario</b><br><span class="small muted">'+(S.remind?'Activado':'Te avisa una vez al día')+'</span></span><button class="btn '+(S.remind?'accent':'ghost')+'" data-act="remind">'+(S.remind?'Activado':'Activar')+'</button></div>':'')+'<button class="btn" data-act="saveset">Guardar</button>'+
+  (confirmReset?'<div class="card" style="background:var(--bad-soft)"><b>¿Borrar todo tu progreso?</b><div class="small muted" style="margin:4px 0 12px">No se puede deshacer.</div><div style="display:flex;gap:8px"><button class="btn ghost" data-act="noreset">Cancelar</button><button class="btn danger" data-act="doreset">Sí, borrar</button></div></div>':'<button class="btn ghost" data-act="askreset">Borrar todo el progreso</button>')+
+  '</div></div>';
+}
+
+/* =================== RENDER =================== */
+const VIEWS={hoy:vHoy,tareas:vTareas,retos:vRetos,notas:vNotas,progreso:vProgreso};
+function buildNav(){document.getElementById("nav").innerHTML='<div class="ind" id="ind"></div>'+NAV.map(([id,n])=>'<button data-act="nav" data-v="'+id+'">'+ic(id,22)+n+'</button>').join("")}
+function setNav(){const i=NAV.findIndex(n=>n[0]===view);document.getElementById("ind").style.transform="translateX("+i*100+"%)";document.querySelectorAll("nav button").forEach((b,j)=>b.classList.toggle("on",j===i))}
+function render(){
+  document.getElementById("brand").innerHTML=esc(S.app)+"<span>.</span>";
+  document.getElementById("streakChip").innerHTML=ic("fire",15)+streak();
+  const v=document.getElementById("view");v.innerHTML=VIEWS[view]();
+  if(!animNext)v.querySelectorAll(".anim").forEach(a=>a.classList.remove("anim"));
+  animNext=false;setNav();bindForms();
+  const b=document.getElementById("xpbar");if(b){const to=+b.dataset.p;b.style.transition="none";b.style.width=(lastPct===null?0:lastPct)+"%";void b.offsetWidth;b.style.transition="";requestAnimationFrame(()=>{b.style.width=to+"%"});lastPct=to}
+}
+function go(v){if(view===v)return;view=v;delNote=null;animNext=true;play("nav");render();window.scrollTo({top:0})}
+function bindForms(){
+  const tf=document.getElementById("taskForm");
+  if(tf)tf.onsubmit=e=>{e.preventDefault();const t=document.getElementById("taskIn").value.trim();if(!t)return;S.tasks.unshift({id:S.nextId++,text:t,cat:document.getElementById("taskCat").value,done:false});save();play("tap");render();const r=document.getElementById("t"+(S.nextId-1));if(r)r.classList.add("reveal");document.getElementById("taskIn").focus()};
+  const nf=document.getElementById("noteForm");
+  if(nf)nf.onsubmit=e=>{e.preventDefault();const t=document.getElementById("noteT").value.trim(),b=document.getElementById("noteB").value.trim();if(!t&&!b)return;addNote(t,b);render()};
+}
+function addNote(t,b){S.notes.unshift({id:S.nextId++,t,b,d:new Date().toLocaleDateString("es-MX",{day:"numeric",month:"short"})});const d=L();play("check");if(d.notes<4){d.notes++;addXP(5)}else{save();toast("Nota guardada")}}
+function extraXP(base){const d=L();d.extra=d.extra||0;if(d.extra>=15)return 0;d.extra++;return base}
+
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act]");if(!el)return;
+  if(el.dataset.act==="close"&&e.target.closest("[data-stop]")&&!e.target.closest("button[data-act=close]"))return;
+  const a=el.dataset.act,id=+el.dataset.id;
+  if(a==="nav")go(el.dataset.v);
+  else if(a==="goreto"){retoTab=el.dataset.t;go("retos")}
+  else if(a==="tab"){if(retoTab===el.dataset.t)return;retoTab=el.dataset.t;play("tap");const ti=["logic","eng","read"].indexOf(retoTab);const seg=document.querySelector(".seg i");if(seg)seg.style.transform="translateX("+ti*100+"%)";document.querySelectorAll(".seg button").forEach(b=>b.classList.toggle("on",b.dataset.t===retoTab));setTimeout(()=>{animNext=true;render()},180)}
+  else if(a==="filter"){taskFilter=el.dataset.f;play("tap");animNext=true;render()}
+  else if(a==="toggle"){const t=S.tasks.find(x=>x.id===id);if(!t)return;t.done=!t.done;const d=L();const row=document.getElementById("t"+id);if(row)row.classList.toggle("done",t.done);
+    if(t.done){d.tasks++;play("check");addXP(10)}else{d.tasks=Math.max(0,d.tasks-1);play("uncheck");addXP(-10)}
+    setTimeout(()=>{if(row&&view==="hoy"&&t.done){row.classList.add("leaving");setTimeout(render,380)}else render()},650)}
+  else if(a==="deltask"){const row=document.getElementById("t"+id);S.tasks=S.tasks.filter(x=>x.id!==id);save();play("del");if(row){row.classList.add("leaving");setTimeout(render,380)}else render()}
+  else if(a==="cleardone"){S.tasks=S.tasks.filter(x=>!x.done);save();play("del");animNext=true;render()}
+  else if(a==="answer"){
+    const kind=el.dataset.k,extra=el.dataset.x==="1",i=+el.dataset.i,d=L();
+    let item,right,xp;
+    if(extra){const x=X[kind];if(!x||x.st)return;item=x.item;right=i===item.a;xp=extraXP(right?5:1);x.st=right?"ok":"no";x.pick=i;x.xp=xp}
+    else{if(d[kind])return;item=daily()[kind];right=i===item.a;xp=right?15:3;d[kind]=right?"ok":"no";d[kind+"Pick"]=i;d[kind+"Xp"]=xp}
+    document.querySelectorAll(".opt").forEach((b,j)=>{b.disabled=true;b.classList.add(j===item.a?"right":j===i?"wrong":"dim")});
+    play(right?"ok":"bad");if(xp)addXP(xp);else save();
+    setTimeout(render,520)}
+  else if(a==="more"){const kind=el.dataset.k;play("open");
+    if(kind==="logic")X.logic={item:Math.random()<.35?fromArr(LOGIC[nextFrom("logic",LOGIC.length)]):genLogic(),st:null};
+    else if(kind==="eng")X.eng={item:Math.random()<.3?fromArr(GRAM[nextFrom("gram",GRAM.length)]):genEng(),st:null};
+    else X.read={i:nextFrom("read",READ.length),done:false};
+    const rb=document.getElementById("retoBody");if(rb){rb.style.transition="opacity .2s, transform .2s";rb.style.opacity="0";rb.style.transform="translateY(-6px)"}
+    setTimeout(()=>{animNext=true;render();window.scrollTo({top:0,behavior:"smooth"})},200)}
+  else if(a==="speak"){const d=L();if(d.speak)return;d.speak=true;play("check");addXP(5);render()}
+  else if(a==="read"){if(X.read){if(X.read.done)return;X.read.done=true;play("ok");const xp=extraXP(5);if(xp)addXP(xp);else save()}else{const d=L();if(d.read)return;d.read=true;play("ok");addXP(10)}render()}
+  else if(a==="saverefl"){const v=(document.getElementById("refl")||{}).value||"";if(!v.trim()){toast("Escribe algo primero");return}const r=READ[X.read?X.read.i:daily().read];addNote("Lectura: "+r[0],v.trim());render()}
+  else if(a==="askdel"){delNote=id;play("tap");render()}
+  else if(a==="canceldel"){delNote=null;render()}
+  else if(a==="delnote"){S.notes=S.notes.filter(n=>n.id!==id);delNote=null;save();play("del");render()}
+  else if(a==="settings"){confirmReset=false;play("open");document.getElementById("overlay").innerHTML=vSettings()}
+  else if(a==="sound"){S.sound=!S.sound;save();play("tap");const b=el;b.textContent=S.sound?"Activados":"Apagados";b.className="btn "+(S.sound?"accent":"ghost")}
+  else if(a==="saveset"){S.app=document.getElementById("setApp").value.trim()||"Pulso";S.user=document.getElementById("setUser").value.trim()||"Noé";save();play("check");closeOverlay()}
+  else if(a==="askreset"){confirmReset=true;document.getElementById("overlay").innerHTML=vSettings();document.querySelector(".sheet").style.animation="none";document.querySelector(".sheet-bg").style.animation="none"}
+  else if(a==="noreset"){confirmReset=false;document.getElementById("overlay").innerHTML=vSettings();document.querySelector(".sheet").style.animation="none";document.querySelector(".sheet-bg").style.animation="none"}
+  else if(a==="doreset"){S=JSON.parse(JSON.stringify(DEF));save();lastPct=0;X.logic=X.eng=X.read=null;view="hoy";play("del");closeOverlay(true)}
+  else if(a==="remind"){enableRemind(el)}
+  else if(a==="close")closeOverlay();
+});
+function closeOverlay(full){const o=document.getElementById("overlay"),sh=o.querySelector(".sheet"),bg=o.firstElementChild;
+  if(sh){sh.style.transition="transform .35s cubic-bezier(.22,1,.36,1)";sh.style.transform="translateY(100%)"}
+  if(bg){bg.style.transition="opacity .35s";bg.style.opacity="0"}
+  setTimeout(()=>{o.innerHTML="";if(full)animNext=true;render()},sh||bg?320:0)}
+
+async function enableRemind(btn){
+  try{
+    if(!("Notification" in window)){toast("Tu navegador no permite notificaciones");return}
+    const p=await Notification.requestPermission();
+    if(p!=="granted"){toast("Permiso de notificaciones negado");return}
+    const reg=await navigator.serviceWorker.ready;
+    let ok=false;
+    if("periodicSync" in reg){try{await reg.periodicSync.register("pulso-daily",{minInterval:24*60*60*1000});ok=true}catch(e){}}
+    reg.showNotification(S.app,{body:"Así se verán tus recordatorios. ¡Tu reto del día te espera!",icon:"icons/icon-192.png",badge:"icons/icon-192.png"});
+    S.remind=true;save();play("check");
+    btn.textContent="Activado";btn.className="btn accent";
+    if(!ok)toast("Instala la app para recibir el aviso diario");
+  }catch(e){toast("No se pudo activar el recordatorio")}
+}
+if(window.PULSO_PWA&&"serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
+buildNav();render();
+</script>
+
+</body></html>
