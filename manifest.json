@@ -1,17 +1,30 @@
 {
-  "name": "Pulso",
-  "short_name": "Pulso",
-  "description": "Tareas, racha, niveles y retos diarios de lógica, inglés y lectura.",
+  "name": "MyGarden",
+  "short_name": "MyGarden",
+  "description": "De semilla a imperio: tu granja, tu mercado y tus negocios.",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#F5F5F2",
-  "theme_color": "#2836AA",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#F6F3EC",
+  "theme_color": "#2E4A2A",
   "lang": "es",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
